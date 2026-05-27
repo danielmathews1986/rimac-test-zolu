@@ -1,5 +1,6 @@
-# instalacion
+# Instalacion
 npm install
+npm run dev
 
 # React + TypeScript + Vite
 
