@@ -1,0 +1,272 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../userContext";
+import "./login.scss"
+import logo from '@assets/images/login/Logo.png';
+import phone from '@assets/images/login/phone.png';
+import bannerImage from '@assets/images/login/desktop-banner.jpg';
+import arrow from '@assets/images/login/gl-sm-down.png';
+import bannerMobile from '@assets/images/login/mobile-banner.jpg';
+import { validateCelular, validateDocumento, validatePrivacyPolicy, validatePrivacyPolicyCC } from "../../util/validation";
+import { fetchUsers } from "../../services/login.service";
+
+
+export default function Login() {
+
+    const { loginUser } = useUser();
+    const [type, setType] = useState('DNI');
+    const [document, setDocument] = useState('');
+    const [celular, setCelular] = useState('');
+    const [errors, setErrors] = useState({ document: '', celular: '', accepted: '', acceptedCC: '' });
+    const [accepted, setAccepted] = useState(false);
+    const [acceptedCC, setAcceptedCC] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e: any) => {
+
+        e.preventDefault();
+
+        const newErrors: any = {};
+
+        const privacyError = validatePrivacyPolicy(accepted);
+        if (privacyError) {
+            newErrors.accepted = privacyError;
+        }
+
+        const privacyErrorCC = validatePrivacyPolicyCC(acceptedCC);
+        if (privacyErrorCC) {
+            newErrors.acceptedCC = privacyErrorCC;
+        }
+
+        const documentError = validateDocumento(document, type);
+        if (documentError) newErrors.document = documentError;
+
+        const celularError = validateCelular(celular);
+        if (celularError) newErrors.celular = celularError;
+
+        if (!celular.trim()) newErrors.celular = 'Campo obligatorio';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+
+        setErrors({ document: '', celular: '', accepted: '', acceptedCC: '' });
+
+
+        try {
+            const user = await fetchUsers();
+
+            const userData = {
+                type: type,
+                document: document,
+                celular: celular,
+                user: user
+            }
+
+            loginUser(userData);
+
+            navigate('/home');
+
+        } catch (error) {
+            console.log(error);
+        }
+
+
+    };
+
+
+
+
+    return (
+        <>
+            <div className="background" />
+            <div className="background-right" />
+            <div className="login animate__animated animate__fadeIn">
+
+                <div className="login__contentHeader">
+                    <img src={logo} alt="logo rimac" width="73" className="login__contentHeader__logo" />
+
+                    <div className="login__contentHeader__box">
+                        <span className="login__contentHeader__box__text">¡Compra por este medio!</span>
+                        <img src={phone} className="login__contentHeader__box__phone" alt="phone" />
+                        <span className="login__contentHeader__box__cel">(01) 411 6001 </span>
+                    </div>
+
+                </div>
+
+                <div className="login__contentBody">
+
+                    <div className="login__contentBody__sizeBox">
+                        <img src={bannerImage} alt="imagen banner" width="480" />
+                    </div>
+
+
+                    <div className="login__contentBody__sizeBoxRight">
+                        <div className="login__contentBody__sizeBoxRight__contentItems">
+
+                            <div className="login__contentBody__sizeBoxRight__contentItems__content--response">
+                                <div>
+                                    <span className="box-green">Seguro Salud Flexible</span>
+                                    <h4>Creado para ti y tu familia</h4>
+                                </div>
+
+                                <img src={bannerMobile} alt="banner-mobile" width="136px" className="banner-mobile" />
+
+
+                            </div>
+
+                            <div className="login__contentBody__sizeBoxRight__contentItems__linea"></div>
+
+
+                            <p>Tú eliges cuánto pagar. Ingresa tus datos, cotiza y recibe nuestra asesoría. 100% online.</p>
+
+                            <form className="form" onSubmit={handleSubmit}>
+
+                            <label htmlFor="document" className="input-group__label">Nro. de documento</label>
+                                <div className="input-group mt-02 mb-05">
+
+                                    <div className="input-group__block">
+                                        <div className="input-group__flex">
+                                            <div className="input-group__select-wrapper">
+                                                <select className="input-group__select"
+                                                    value={type}
+                                                    onChange={(e) => setType(e.target.value)}>
+                                                    <option value="DNI">DNI</option>
+                                                    <option value="RUC">RUC</option>
+                                                </select>
+                                                <img
+                                                    src={arrow}
+                                                    alt="arrow"
+                                                    width="20px"
+                                                    className="input-group__icon"
+                                                />
+                                            </div>
+
+
+                                            <div className="input-group__input-wrapper">
+                                                <input type="text"
+                                                    id="document"
+                                                    value={document}
+                                                    maxLength={type === 'DNI' ? 8 : 11}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        if (/^\d*$/.test(value)) setDocument(value);
+                                                    }}
+                                                    className="input-group__input"
+                                                />
+                                                
+
+                                            </div>
+                                        </div>
+
+
+
+                                        {errors.document && (
+                                            <span className="form__error">{errors.document}</span>
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                <label htmlFor="celular" className="input-group__label mt-2">Celular</label>
+                                <div className="input-group__input-wrapper">
+                                    <input type="text"
+                                        id="celular"
+                                        className="input-group__input-cel"
+                                        value={celular}
+                                        maxLength={9}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (/^\d*$/.test(value)) setCelular(value);
+                                        }}
+                                    />
+                                    
+                                    {errors.celular && (
+                                        <span className="form__error">{errors.celular}</span>
+                                    )}
+                                </div>
+
+                                <label className="checkbox checkbox__top16 checkbox__mb-2">
+                                    <input
+                                        type="checkbox"
+                                        className="checkbox__input"
+                                        checked={accepted}
+                                        onChange={(e) => {
+                                            const checked = e.target.checked;
+
+                                            setAccepted(checked);
+
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                accepted: checked
+                                                    ? ''
+                                                    : 'Campo obligatorio',
+                                            }));
+                                        }}
+                                    />
+
+                                    <span className="checkbox__custom"></span>
+
+                                    <div className="flex">
+                                        <span className="checkbox__label">
+                                            Acepto la Política de Privacidad
+                                        </span>
+                                    </div>
+                                </label>
+
+                                {errors.accepted && (
+                                    <span className="form__error lg-2">
+                                        {errors.accepted}
+                                    </span>
+                                )}
+
+
+                                <label className="checkbox checkbox__top16 checkbox__mb-2 checkbox__w-300">
+                                    <input type="checkbox"
+                                        className="checkbox__input"
+                                        checked={acceptedCC}
+                                        onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setAcceptedCC(checked);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                acceptedCC: checked
+                                                    ? ''
+                                                    : 'Campo obligatorio',
+                                            }));
+                                        }}
+                                    />
+
+                                    <span className="checkbox__custom"></span>
+                                    <span className="checkbox__label">Acepto la Política Comunicaciones Comerciales</span>
+                                </label>
+                                {errors.acceptedCC && (
+                                    <span className="form__error lg-2">
+                                        {errors.acceptedCC}
+                                    </span>
+                                )}
+
+                                <div className="mt-2">
+                                    <a href="#" className="login__contentBody__sizeBoxRight__contentItems__link-term mt-2">Aplican Términos y Condiciones.</a>
+                                </div>
+
+                                <button type="submit" className="form__submit">
+                                    Cotiza aqui
+                                </button>
+                            </form>
+                        </div>
+
+
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </>
+    )
+}
